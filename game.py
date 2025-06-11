@@ -3,7 +3,6 @@ import time
 import curses
 import asyncio
 
-from animations.shot import fire
 from animations.space_ship import animate_spaceship
 
 TIC_TIMEOUT = 0.1
@@ -49,14 +48,12 @@ def draw(canvas):
     rows, columns = canvas.getmaxyx()
     quantity_of_stairs = random.randint(MIN_STARS, MAX_STARS)
 
-    coroutine_of_shot = (fire(canvas, rows // 2, columns // 2))
-
     spaceship_first_frame = get_frame('animations/frames/rocket_frame_1.txt')
     spaceship_second_frame = get_frame('animations/frames/rocket_frame_2.txt')
     coroutine_of_spaceship = animate_spaceship(canvas, 0, columns // 2, spaceship_first_frame,
                                                spaceship_second_frame)
 
-    coroutines = [coroutine_of_spaceship]  # TODO: add shot courutine
+    coroutines = [coroutine_of_spaceship]
     for _ in range(quantity_of_stairs):
         row = random.randint(1, rows - 2)
         column = random.randint(1, columns - 2)
