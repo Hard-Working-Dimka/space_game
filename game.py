@@ -3,15 +3,20 @@ import time
 import curses
 import asyncio
 
+from shot_animation import fire
 
 TIC_TIMEOUT = 0.1
 MAX_STARS = 30
 MIN_STARS = 15
 ICONS_OF_STARS = ['+', '*', '.', ':']
+OFFSET_OF_ANIMATION = 10
 
 
 async def blink(canvas, row, column, symbol='*'):
     while True:
+        for _ in range(random.randint(0, OFFSET_OF_ANIMATION)):
+            await asyncio.sleep(0)
+
         canvas.addstr(row, column, symbol, curses.A_DIM)
         for _ in range(20):
             await asyncio.sleep(0)
@@ -36,7 +41,9 @@ def draw(canvas):
     rows, columns = canvas.getmaxyx()
     quantity_of_stairs = random.randint(MIN_STARS, MAX_STARS)
 
-    coroutines = []
+    coroutine_of_shot = (fire(canvas, rows // 2, columns // 2))
+
+    coroutines = [coroutine_of_shot]
     for _ in range(quantity_of_stairs):
         row = random.randint(1, rows - 2)
         column = random.randint(1, columns - 2)
@@ -58,4 +65,3 @@ def draw(canvas):
 if __name__ == '__main__':
     curses.update_lines_cols()
     curses.wrapper(draw)
-
