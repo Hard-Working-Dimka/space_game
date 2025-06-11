@@ -3,13 +3,20 @@ import time
 import curses
 import asyncio
 
-from shot_animation import fire
+from animations.shot import fire
+from animations.space_ship import animate_spaceship
 
 TIC_TIMEOUT = 0.1
 MAX_STARS = 30
 MIN_STARS = 15
 ICONS_OF_STARS = ['+', '*', '.', ':']
 OFFSET_OF_ANIMATION = 10
+
+
+def get_frame(path):
+    with open(path, "r") as file:
+        file_content = file.read()
+    return file_content
 
 
 async def blink(canvas, row, column, symbol='*'):
@@ -43,7 +50,13 @@ def draw(canvas):
 
     coroutine_of_shot = (fire(canvas, rows // 2, columns // 2))
 
-    coroutines = [coroutine_of_shot]
+    spaceship_first_frame = get_frame('animations/frames/rocket_frame_1.txt')
+    spaceship_second_frame = get_frame('animations/frames/rocket_frame_2.txt')
+    print(spaceship_second_frame)
+    coroutine_of_spaceship = animate_spaceship(canvas, 0, columns // 2, spaceship_first_frame,
+                                               spaceship_second_frame)
+
+    coroutines = [coroutine_of_spaceship]  # TODO: add shot courutine
     for _ in range(quantity_of_stairs):
         row = random.randint(1, rows - 2)
         column = random.randint(1, columns - 2)
