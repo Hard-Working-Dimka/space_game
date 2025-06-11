@@ -42,6 +42,7 @@ async def blink(canvas, row, column, symbol='*'):
 
 
 def draw(canvas):
+    canvas.nodelay(True)
     canvas.border('|', '|')
     curses.curs_set(False)
 
@@ -52,7 +53,6 @@ def draw(canvas):
 
     spaceship_first_frame = get_frame('animations/frames/rocket_frame_1.txt')
     spaceship_second_frame = get_frame('animations/frames/rocket_frame_2.txt')
-    print(spaceship_second_frame)
     coroutine_of_spaceship = animate_spaceship(canvas, 0, columns // 2, spaceship_first_frame,
                                                spaceship_second_frame)
 
