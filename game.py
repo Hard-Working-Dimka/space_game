@@ -18,9 +18,9 @@ def get_frame(path):
     return file_content
 
 
-async def blink(canvas, row, column, symbol='*'):
+async def blink(canvas, row, column, offset_tics, symbol='*'):
     while True:
-        for _ in range(random.randint(0, OFFSET_OF_ANIMATION)):
+        for _ in range(offset_tics):
             await asyncio.sleep(0)
 
         canvas.addstr(row, column, symbol, curses.A_DIM)
@@ -54,10 +54,11 @@ def draw(canvas):
                                                spaceship_second_frame)
 
     coroutines = [coroutine_of_spaceship]
+    offset_tics = random.randint(0, OFFSET_OF_ANIMATION)
     for _ in range(quantity_of_stairs):
         row = random.randint(1, rows - 2)
         column = random.randint(1, columns - 2)
-        coroutines.append(blink(canvas, row, column, symbol=random.choice(ICONS_OF_STARS)))
+        coroutines.append(blink(canvas, row, column, offset_tics, symbol=random.choice(ICONS_OF_STARS)))
 
     while True:
         for coroutine in coroutines.copy():
