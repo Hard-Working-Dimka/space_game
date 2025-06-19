@@ -1,26 +1,30 @@
 import asyncio
 import curses
 
+from animations.physics_of_ship import update_speed
 from curses_tools import draw_frame, read_controls, get_frame_size
 from itertools import cycle
-
-ACCELERATION_OF_SHIP = 10
 
 
 async def animate_spaceship(canvas, start_row, start_column, *args):
     rows_canvas, columns_canvas = canvas.getmaxyx()
+    row_speed = column_speed = 0
+
     for frame in cycle(args):
         rows_spaceship, columns_spaceship = get_frame_size(frame)
 
         for _ in range(2):
             rows_direction, columns_direction, _ = read_controls(canvas)
+            row_speed, column_speed = update_speed(row_speed, column_speed, rows_direction, columns_direction)
 
-            rows_direction_validated = min(max(rows_direction * ACCELERATION_OF_SHIP + start_row, 1),
-                                           rows_canvas - rows_spaceship - 1)
-            columns_spaceship_validated = min(max(columns_direction * ACCELERATION_OF_SHIP + start_column, 1),
-                                              columns_canvas - columns_spaceship - 1)
+            start_row += row_speed
+            start_column += column_speed
+
+            rows_direction_validated = min(max(start_row, 1), rows_canvas - rows_spaceship - 1)
+            columns_spaceship_validated = min(max(start_column, 1), columns_canvas - columns_spaceship - 1)
 
             start_row, start_column = rows_direction_validated, columns_spaceship_validated
+
             draw_frame(canvas, start_row, start_column, frame)
             await asyncio.sleep(0)
             draw_frame(canvas, start_row, start_column, frame, negative=True)
