@@ -2,20 +2,31 @@ import random
 import time
 import curses
 import asyncio
+import os, random
 
-from animations.space_ship import animate_spaceship
+from animations.animations import animate_spaceship, fly_garbage
 
 TIC_TIMEOUT = 0.1
 MAX_STARS = 30
 MIN_STARS = 15
 ICONS_OF_STARS = ['+', '*', '.', ':']
 OFFSET_OF_ANIMATION = 10
+COROUTINES = []
 
 
 def get_frame(path):
     with open(path, "r") as file:
         file_content = file.read()
     return file_content
+
+
+async def fill_orbit_with_garbage(canvas, garbage_filenames, columns):
+    while True:
+        for _ in range(random.randint(1, 30)):
+            await asyncio.sleep(0)
+        garbage_filename = random.choice(garbage_filenames)
+        garbage_frame = get_frame(f'animations/frames/garbage/{garbage_filename}')
+        COROUTINES.append(fly_garbage(canvas, column=random.randint(2, columns - 2), garbage_frame=garbage_frame))
 
 
 async def blink(canvas, row, column, offset_tics, symbol='*'):
@@ -50,26 +61,28 @@ def draw(canvas):
 
     spaceship_first_frame = get_frame('animations/frames/rocket_frame_1.txt')
     spaceship_second_frame = get_frame('animations/frames/rocket_frame_2.txt')
-    coroutine_of_spaceship = animate_spaceship(canvas, 0, columns // 2, spaceship_first_frame,
-                                               spaceship_second_frame)
+    COROUTINES.append(animate_spaceship(canvas, 0, columns // 2, spaceship_first_frame,
+                                        spaceship_second_frame))
 
-    coroutines = [coroutine_of_spaceship]
     offset_tics = random.randint(0, OFFSET_OF_ANIMATION)
     for _ in range(quantity_of_stairs):
         row = random.randint(1, rows - 2)
         column = random.randint(1, columns - 2)
-        coroutines.append(blink(canvas, row, column, offset_tics, symbol=random.choice(ICONS_OF_STARS)))
+        COROUTINES.append(blink(canvas, row, column, offset_tics, symbol=random.choice(ICONS_OF_STARS)))
+
+    garbage_filenames = os.listdir('animations/frames/garbage')
+    COROUTINES.append(fill_orbit_with_garbage(canvas, garbage_filenames, columns))
 
     while True:
-        for coroutine in coroutines.copy():
+        for coroutine in COROUTINES.copy():
             try:
                 coroutine.send(None)
             except StopIteration:
-                coroutines.remove(coroutine)
+                COROUTINES.remove(coroutine)
 
         canvas.refresh()
         time.sleep(TIC_TIMEOUT)
-        if len(coroutines) == 0:
+        if len(COROUTINES) == 0:
             break
 
 
