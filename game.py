@@ -1,4 +1,3 @@
-import random
 import time
 import curses
 import asyncio
@@ -14,6 +13,11 @@ OFFSET_OF_ANIMATION = 10
 COROUTINES = []
 
 
+async def sleep(tics=1):
+    for _ in range(tics):
+        await asyncio.sleep(0)
+
+
 def get_frame(path):
     with open(path, "r") as file:
         file_content = file.read()
@@ -22,8 +26,7 @@ def get_frame(path):
 
 async def fill_orbit_with_garbage(canvas, garbage_filenames, columns):
     while True:
-        for _ in range(random.randint(1, 30)):
-            await asyncio.sleep(0)
+        await sleep(random.randint(1, 30))
         garbage_filename = random.choice(garbage_filenames)
         garbage_frame = get_frame(f'animations/frames/garbage/{garbage_filename}')
         COROUTINES.append(fly_garbage(canvas, column=random.randint(2, columns - 2), garbage_frame=garbage_frame))
@@ -31,24 +34,19 @@ async def fill_orbit_with_garbage(canvas, garbage_filenames, columns):
 
 async def blink(canvas, row, column, offset_tics, symbol='*'):
     while True:
-        for _ in range(offset_tics):
-            await asyncio.sleep(0)
+        await sleep(offset_tics)
 
         canvas.addstr(row, column, symbol, curses.A_DIM)
-        for _ in range(20):
-            await asyncio.sleep(0)
+        await sleep(20)
 
         canvas.addstr(row, column, symbol)
-        for _ in range(3):
-            await asyncio.sleep(0)
+        await sleep(3)
 
         canvas.addstr(row, column, symbol, curses.A_BOLD)
-        for _ in range(5):
-            await asyncio.sleep(0)
+        await sleep(5)
 
         canvas.addstr(row, column, symbol)
-        for _ in range(3):
-            await asyncio.sleep(0)
+        await sleep(3)
 
 
 def draw(canvas):
