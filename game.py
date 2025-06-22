@@ -5,6 +5,7 @@ import os, random
 from itertools import cycle
 
 from animations.animations import fly_garbage, fire
+from animations.obstacles import Obstacle, show_obstacles
 from animations.physics_of_ship import update_speed
 from curses_tools import get_frame_size, draw_frame, read_controls
 
@@ -13,7 +14,9 @@ MAX_STARS = 30
 MIN_STARS = 15
 ICONS_OF_STARS = ['+', '*', '.', ':']
 OFFSET_OF_ANIMATION = 10
-COROUTINES = []
+
+coroutines = []
+obstacles = []
 
 
 async def sleep(tics=1):
@@ -32,7 +35,16 @@ async def fill_orbit_with_garbage(canvas, garbage_filenames, columns):
         await sleep(random.randint(1, 30))
         garbage_filename = random.choice(garbage_filenames)
         garbage_frame = get_frame(f'animations/frames/garbage/{garbage_filename}')
-        COROUTINES.append(fly_garbage(canvas, column=random.randint(2, columns - 2), garbage_frame=garbage_frame))
+        column = random.randint(2, columns - 2)
+
+        frame_row, frame_column = get_frame_size(garbage_frame)
+
+        obstacle = Obstacle(0, column, frame_row, frame_column)
+        obstacles.append(obstacle)
+
+        coroutines.append(
+            fly_garbage(canvas, column=column, garbage_frame=garbage_frame, obstacle=obstacle, obstacles=obstacles))
+        coroutines.append(show_obstacles(canvas, obstacles))
 
 
 async def run_spaceship(canvas, start_row, start_column, *args):
@@ -56,7 +68,7 @@ async def run_spaceship(canvas, start_row, start_column, *args):
 
             draw_frame(canvas, start_row, start_column, frame)
             if fire_on:
-                COROUTINES.append(fire(canvas, start_row, start_column + 2))
+                coroutines.append(fire(canvas, start_row, start_column + 2))
 
             await asyncio.sleep(0)
             draw_frame(canvas, start_row, start_column, frame, negative=True)
@@ -89,28 +101,28 @@ def draw(canvas):
 
     spaceship_first_frame = get_frame('animations/frames/rocket_frame_1.txt')
     spaceship_second_frame = get_frame('animations/frames/rocket_frame_2.txt')
-    COROUTINES.append(run_spaceship(canvas, 0, columns // 2, spaceship_first_frame,
+    coroutines.append(run_spaceship(canvas, 0, columns // 2, spaceship_first_frame,
                                     spaceship_second_frame))
 
     offset_tics = random.randint(0, OFFSET_OF_ANIMATION)
     for _ in range(quantity_of_stairs):
         row = random.randint(1, rows - 2)
         column = random.randint(1, columns - 2)
-        COROUTINES.append(blink(canvas, row, column, offset_tics, symbol=random.choice(ICONS_OF_STARS)))
+        coroutines.append(blink(canvas, row, column, offset_tics, symbol=random.choice(ICONS_OF_STARS)))
 
     garbage_filenames = os.listdir('animations/frames/garbage')
-    COROUTINES.append(fill_orbit_with_garbage(canvas, garbage_filenames, columns))
+    coroutines.append(fill_orbit_with_garbage(canvas, garbage_filenames, columns))
 
     while True:
-        for coroutine in COROUTINES.copy():
+        for coroutine in coroutines.copy():
             try:
                 coroutine.send(None)
             except StopIteration:
-                COROUTINES.remove(coroutine)
+                coroutines.remove(coroutine)
 
         canvas.refresh()
         time.sleep(TIC_TIMEOUT)
-        if len(COROUTINES) == 0:
+        if len(coroutines) == 0:
             break
 
 
