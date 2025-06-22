@@ -32,7 +32,7 @@ def get_frame(path):
 
 async def fill_orbit_with_garbage(canvas, garbage_filenames, columns):
     while True:
-        await sleep(random.randint(1, 30))
+        await sleep(random.randint(10, 30))
         garbage_filename = random.choice(garbage_filenames)
         garbage_frame = get_frame(f'animations/frames/garbage/{garbage_filename}')
         column = random.randint(2, columns - 2)
@@ -44,7 +44,7 @@ async def fill_orbit_with_garbage(canvas, garbage_filenames, columns):
 
         coroutines.append(
             fly_garbage(canvas, column=column, garbage_frame=garbage_frame, obstacle=obstacle, obstacles=obstacles))
-        coroutines.append(show_obstacles(canvas, obstacles))
+        # coroutines.append(show_obstacles(canvas, obstacles))
 
 
 async def run_spaceship(canvas, start_row, start_column, *args):
@@ -68,7 +68,7 @@ async def run_spaceship(canvas, start_row, start_column, *args):
 
             draw_frame(canvas, start_row, start_column, frame)
             if fire_on:
-                coroutines.append(fire(canvas, start_row, start_column + 2))
+                coroutines.append(fire(canvas, start_row, start_column + 2, obstacles))
 
             await asyncio.sleep(0)
             draw_frame(canvas, start_row, start_column, frame, negative=True)
