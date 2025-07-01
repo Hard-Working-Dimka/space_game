@@ -17,7 +17,7 @@ MIN_STARS = 15
 ICONS_OF_STARS = ['+', '*', '.', ':']
 OFFSET_OF_ANIMATION = 10
 CHANGE_YEAR_AFTER = 10
-SHIFT_YEAR_STEP = 1
+SHIFT_YEAR_STEP = 10
 
 coroutines = []
 obstacles = []
@@ -68,7 +68,6 @@ async def fill_orbit_with_garbage(canvas, garbage_filenames, columns):
             fly_garbage(canvas, column=column, garbage_frame=garbage_frame, obstacle=obstacle, obstacles=obstacles,
                         obstacles_in_last_collisions=obstacles_in_last_collisions))
         year = year + await timer(CHANGE_YEAR_AFTER)
-        # coroutines.append(show_obstacles(canvas, obstacles))
 
 
 async def run_spaceship(canvas, start_row, start_column, obstacles, sub_window, *args):
@@ -95,7 +94,8 @@ async def run_spaceship(canvas, start_row, start_column, obstacles, sub_window, 
                 start_row, start_column = rows_direction_validated, columns_spaceship_validated
 
                 draw_frame(canvas, start_row, start_column, frame)
-                if fire_on:
+
+                if fire_on and year >= 2000:
                     coroutines.append(
                         fire(canvas, start_row, start_column + 2, obstacles, obstacles_in_last_collisions))
 
