@@ -1,6 +1,7 @@
 import asyncio
 import curses
 
+from animations.explosion import explode
 from curses_tools import draw_frame
 
 
@@ -57,6 +58,7 @@ async def fly_garbage(canvas, column, garbage_frame, obstacle, obstacles, obstac
             obstacle.row = row
             for obstacle_in_last_collisions in obstacles_in_last_collisions:
                 if obstacle_in_last_collisions.row == row:
+                    await explode(canvas, obstacle_in_last_collisions.row, obstacle_in_last_collisions.column)
                     obstacles_in_last_collisions.remove(obstacle_in_last_collisions)
                     return None
     finally:
