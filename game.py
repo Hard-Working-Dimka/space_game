@@ -3,10 +3,10 @@ import curses
 import asyncio
 import os, random
 from itertools import cycle
-from operator import ifloordiv
 
 from animations.animations import fly_garbage, fire
-from animations.obstacles import Obstacle, show_obstacles
+from animations.game_scenario import get_garbage_delay_tics, PHRASES
+from animations.obstacles import Obstacle
 from animations.physics_of_ship import update_speed
 from curses_tools import get_frame_size, draw_frame, read_controls
 from game_over import show_gameover
@@ -16,15 +16,29 @@ MAX_STARS = 30
 MIN_STARS = 15
 ICONS_OF_STARS = ['+', '*', '.', ':']
 OFFSET_OF_ANIMATION = 10
+CHANGE_YEAR_AFTER = 10
+SHIFT_YEAR_STEP = 1
 
 coroutines = []
 obstacles = []
 obstacles_in_last_collisions = []
+year = 1957
 
 
 async def sleep(tics=1):
     for _ in range(tics):
         await asyncio.sleep(0)
+
+
+async def restore_frame(canvas):
+    while True:
+        canvas.border('|', '|')
+        await sleep(1)
+
+
+async def timer(tiks):
+    await sleep(tiks)
+    return SHIFT_YEAR_STEP
 
 
 def get_frame(path):
@@ -34,8 +48,13 @@ def get_frame(path):
 
 
 async def fill_orbit_with_garbage(canvas, garbage_filenames, columns):
+    global year
     while True:
-        await sleep(random.randint(10, 30))
+        time = get_garbage_delay_tics(year)
+        if time is None:
+            year = year + await timer(CHANGE_YEAR_AFTER)
+            continue
+        await sleep(time)
         garbage_filename = random.choice(garbage_filenames)
         garbage_frame = get_frame(f'animations/frames/garbage/{garbage_filename}')
         column = random.randint(2, columns - 2)
@@ -48,10 +67,11 @@ async def fill_orbit_with_garbage(canvas, garbage_filenames, columns):
         coroutines.append(
             fly_garbage(canvas, column=column, garbage_frame=garbage_frame, obstacle=obstacle, obstacles=obstacles,
                         obstacles_in_last_collisions=obstacles_in_last_collisions))
+        year = year + await timer(CHANGE_YEAR_AFTER)
         # coroutines.append(show_obstacles(canvas, obstacles))
 
 
-async def run_spaceship(canvas, start_row, start_column, obstacles, *args):
+async def run_spaceship(canvas, start_row, start_column, obstacles, sub_window, *args):
     rows_canvas, columns_canvas = canvas.getmaxyx()
     row_speed = column_speed = 0
     is_over = False
@@ -60,6 +80,8 @@ async def run_spaceship(canvas, start_row, start_column, obstacles, *args):
         rows_spaceship, columns_spaceship = get_frame_size(frame)
 
         for _ in range(2):
+            sub_window.refresh()
+            sub_window.addstr(1, 2, f'year - {year} ---- {PHRASES.get(year) or ''}')
             if not is_over:
                 rows_direction, columns_direction, fire_on = read_controls(canvas)
                 row_speed, column_speed = update_speed(row_speed, column_speed, rows_direction, columns_direction)
@@ -67,7 +89,7 @@ async def run_spaceship(canvas, start_row, start_column, obstacles, *args):
                 start_row += row_speed
                 start_column += column_speed
 
-                rows_direction_validated = min(max(start_row, 1), rows_canvas - rows_spaceship - 1)
+                rows_direction_validated = min(max(start_row, 1), rows_canvas - 2 - rows_spaceship - 1)
                 columns_spaceship_validated = min(max(start_column, 1), columns_canvas - columns_spaceship - 1)
 
                 start_row, start_column = rows_direction_validated, columns_spaceship_validated
@@ -114,14 +136,20 @@ def draw(canvas):
     rows, columns = canvas.getmaxyx()
     quantity_of_stairs = random.randint(MIN_STARS, MAX_STARS)
 
+    sub_window = canvas.derwin(3, columns, rows - 3, 0)
+    sub_window.border('|', '|')
+
+    coroutines.append(restore_frame(canvas))
+    coroutines.append(restore_frame(sub_window))
+
     spaceship_first_frame = get_frame('animations/frames/rocket_frame_1.txt')
     spaceship_second_frame = get_frame('animations/frames/rocket_frame_2.txt')
-    coroutines.append(run_spaceship(canvas, 0, columns // 2, obstacles, spaceship_first_frame,
+    coroutines.append(run_spaceship(canvas, 0, columns // 2, obstacles, sub_window, spaceship_first_frame,
                                     spaceship_second_frame))
 
     offset_tics = random.randint(0, OFFSET_OF_ANIMATION)
     for _ in range(quantity_of_stairs):
-        row = random.randint(1, rows - 2)
+        row = random.randint(1, rows - 4)
         column = random.randint(1, columns - 2)
         coroutines.append(blink(canvas, row, column, offset_tics, symbol=random.choice(ICONS_OF_STARS)))
 
