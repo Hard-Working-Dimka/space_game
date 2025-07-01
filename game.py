@@ -17,6 +17,7 @@ OFFSET_OF_ANIMATION = 10
 
 coroutines = []
 obstacles = []
+obstacles_in_last_collisions = []
 
 
 async def sleep(tics=1):
@@ -43,7 +44,8 @@ async def fill_orbit_with_garbage(canvas, garbage_filenames, columns):
         obstacles.append(obstacle)
 
         coroutines.append(
-            fly_garbage(canvas, column=column, garbage_frame=garbage_frame, obstacle=obstacle, obstacles=obstacles))
+            fly_garbage(canvas, column=column, garbage_frame=garbage_frame, obstacle=obstacle, obstacles=obstacles,
+                        obstacles_in_last_collisions=obstacles_in_last_collisions))
         # coroutines.append(show_obstacles(canvas, obstacles))
 
 
@@ -68,7 +70,7 @@ async def run_spaceship(canvas, start_row, start_column, *args):
 
             draw_frame(canvas, start_row, start_column, frame)
             if fire_on:
-                coroutines.append(fire(canvas, start_row, start_column + 2, obstacles))
+                coroutines.append(fire(canvas, start_row, start_column + 2, obstacles, obstacles_in_last_collisions))
 
             await asyncio.sleep(0)
             draw_frame(canvas, start_row, start_column, frame, negative=True)
