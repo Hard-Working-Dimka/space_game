@@ -3,11 +3,13 @@ import curses
 import asyncio
 import os, random
 from itertools import cycle
+from operator import ifloordiv
 
 from animations.animations import fly_garbage, fire
 from animations.obstacles import Obstacle, show_obstacles
 from animations.physics_of_ship import update_speed
 from curses_tools import get_frame_size, draw_frame, read_controls
+from game_over import show_gameover
 
 TIC_TIMEOUT = 0.1
 MAX_STARS = 30
@@ -49,28 +51,39 @@ async def fill_orbit_with_garbage(canvas, garbage_filenames, columns):
         # coroutines.append(show_obstacles(canvas, obstacles))
 
 
-async def run_spaceship(canvas, start_row, start_column, *args):
+async def run_spaceship(canvas, start_row, start_column, obstacles, *args):
     rows_canvas, columns_canvas = canvas.getmaxyx()
     row_speed = column_speed = 0
+    is_over = False
 
     for frame in cycle(args):
         rows_spaceship, columns_spaceship = get_frame_size(frame)
 
         for _ in range(2):
-            rows_direction, columns_direction, fire_on = read_controls(canvas)
-            row_speed, column_speed = update_speed(row_speed, column_speed, rows_direction, columns_direction)
+            if not is_over:
+                rows_direction, columns_direction, fire_on = read_controls(canvas)
+                row_speed, column_speed = update_speed(row_speed, column_speed, rows_direction, columns_direction)
 
-            start_row += row_speed
-            start_column += column_speed
+                start_row += row_speed
+                start_column += column_speed
 
-            rows_direction_validated = min(max(start_row, 1), rows_canvas - rows_spaceship - 1)
-            columns_spaceship_validated = min(max(start_column, 1), columns_canvas - columns_spaceship - 1)
+                rows_direction_validated = min(max(start_row, 1), rows_canvas - rows_spaceship - 1)
+                columns_spaceship_validated = min(max(start_column, 1), columns_canvas - columns_spaceship - 1)
 
-            start_row, start_column = rows_direction_validated, columns_spaceship_validated
+                start_row, start_column = rows_direction_validated, columns_spaceship_validated
 
-            draw_frame(canvas, start_row, start_column, frame)
-            if fire_on:
-                coroutines.append(fire(canvas, start_row, start_column + 2, obstacles, obstacles_in_last_collisions))
+                draw_frame(canvas, start_row, start_column, frame)
+                if fire_on:
+                    coroutines.append(
+                        fire(canvas, start_row, start_column + 2, obstacles, obstacles_in_last_collisions))
+
+                for obstacle in obstacles:
+                    if obstacle.has_collision(start_row, start_column + 2):
+                        draw_frame(canvas, start_row, start_column, frame, negative=True)
+                        show_gameover(canvas, rows_canvas // 3, columns_canvas // 4)
+                        is_over = True
+            else:
+                show_gameover(canvas, rows_canvas // 3, columns_canvas // 4)
 
             await asyncio.sleep(0)
             draw_frame(canvas, start_row, start_column, frame, negative=True)
@@ -103,7 +116,7 @@ def draw(canvas):
 
     spaceship_first_frame = get_frame('animations/frames/rocket_frame_1.txt')
     spaceship_second_frame = get_frame('animations/frames/rocket_frame_2.txt')
-    coroutines.append(run_spaceship(canvas, 0, columns // 2, spaceship_first_frame,
+    coroutines.append(run_spaceship(canvas, 0, columns // 2, obstacles, spaceship_first_frame,
                                     spaceship_second_frame))
 
     offset_tics = random.randint(0, OFFSET_OF_ANIMATION)
