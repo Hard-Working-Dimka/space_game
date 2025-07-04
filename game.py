@@ -75,31 +75,33 @@ async def run_spaceship(canvas, start_row, start_column, sub_window, *args):
         for _ in range(2):
             sub_window.refresh()
             sub_window.addstr(1, 2, f'year - {year} ---- {PHRASES.get(year) or ''}')
-            if not is_over:
-                rows_direction, columns_direction, fire_on = read_controls(canvas)
-                row_speed, column_speed = update_speed(row_speed, column_speed, rows_direction, columns_direction)
-
-                start_row += row_speed
-                start_column += column_speed
-
-                rows_direction_validated = min(max(start_row, 1), rows_canvas - 2 - rows_spaceship - 1)
-                columns_spaceship_validated = min(max(start_column, 1), columns_canvas - columns_spaceship - 1)
-
-                start_row, start_column = rows_direction_validated, columns_spaceship_validated
-
-                draw_frame(canvas, start_row, start_column, frame)
-
-                if fire_on and year >= 2000:
-                    coroutines.append(
-                        fire(canvas, start_row, start_column + 2, obstacles, obstacles_in_last_collisions))
-
-                for obstacle in obstacles:
-                    if obstacle.has_collision(start_row, start_column + 2):
-                        draw_frame(canvas, start_row, start_column, frame, negative=True)
-                        show_gameover(canvas, rows_canvas // 3, columns_canvas // 4)
-                        is_over = True
-            else:
+            if is_over:
                 show_gameover(canvas, rows_canvas // 3, columns_canvas // 4)
+                await asyncio.sleep(0)
+                draw_frame(canvas, start_row, start_column, frame, negative=True)
+                continue
+            rows_direction, columns_direction, fire_on = read_controls(canvas)
+            row_speed, column_speed = update_speed(row_speed, column_speed, rows_direction, columns_direction)
+
+            start_row += row_speed
+            start_column += column_speed
+
+            rows_direction_validated = min(max(start_row, 1), rows_canvas - 2 - rows_spaceship - 1)
+            columns_spaceship_validated = min(max(start_column, 1), columns_canvas - columns_spaceship - 1)
+
+            start_row, start_column = rows_direction_validated, columns_spaceship_validated
+
+            draw_frame(canvas, start_row, start_column, frame)
+
+            if fire_on and year >= 2000:
+                coroutines.append(
+                    fire(canvas, start_row, start_column + 2, obstacles, obstacles_in_last_collisions))
+
+            for obstacle in obstacles:
+                if obstacle.has_collision(start_row, start_column + 2):
+                    draw_frame(canvas, start_row, start_column, frame, negative=True)
+                    show_gameover(canvas, rows_canvas // 3, columns_canvas // 4)
+                    is_over = True
 
             await asyncio.sleep(0)
             draw_frame(canvas, start_row, start_column, frame, negative=True)
