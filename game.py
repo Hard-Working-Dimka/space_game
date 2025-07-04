@@ -6,7 +6,6 @@ from itertools import cycle
 
 from animations.animations import fly_garbage, fire
 from animations.game_scenario import get_garbage_delay_tics, PHRASES
-from animations.obstacles import Obstacle
 from animations.physics_of_ship import update_speed
 from curses_tools import get_frame_size, draw_frame, read_controls
 from game_over import show_gameover
@@ -59,18 +58,13 @@ async def fill_orbit_with_garbage(canvas, garbage_filenames, columns):
         garbage_frame = get_frame(f'animations/frames/garbage/{garbage_filename}')
         column = random.randint(2, columns - 2)
 
-        frame_row, frame_column = get_frame_size(garbage_frame)
-
-        obstacle = Obstacle(0, column, frame_row, frame_column)
-        obstacles.append(obstacle)
-
         coroutines.append(
-            fly_garbage(canvas, column=column, garbage_frame=garbage_frame, obstacle=obstacle, obstacles=obstacles,
+            fly_garbage(canvas, column=column, garbage_frame=garbage_frame, obstacles=obstacles,
                         obstacles_in_last_collisions=obstacles_in_last_collisions))
         year = year + await timer(CHANGE_YEAR_AFTER)
 
 
-async def run_spaceship(canvas, start_row, start_column, obstacles, sub_window, *args):
+async def run_spaceship(canvas, start_row, start_column, sub_window, *args):
     rows_canvas, columns_canvas = canvas.getmaxyx()
     row_speed = column_speed = 0
     is_over = False
@@ -144,7 +138,7 @@ def draw(canvas):
 
     spaceship_first_frame = get_frame('animations/frames/rocket_frame_1.txt')
     spaceship_second_frame = get_frame('animations/frames/rocket_frame_2.txt')
-    coroutines.append(run_spaceship(canvas, 0, columns // 2, obstacles, sub_window, spaceship_first_frame,
+    coroutines.append(run_spaceship(canvas, 0, columns // 2, sub_window, spaceship_first_frame,
                                     spaceship_second_frame))
 
     offset_tics = random.randint(0, OFFSET_OF_ANIMATION)

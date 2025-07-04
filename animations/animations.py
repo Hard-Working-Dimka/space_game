@@ -2,7 +2,8 @@ import asyncio
 import curses
 
 from animations.explosion import explode
-from curses_tools import draw_frame
+from animations.obstacles import Obstacle
+from curses_tools import draw_frame, get_frame_size
 
 
 async def fire(canvas, start_row, start_column, obstacles, obstacles_in_last_collisions, rows_speed=-0.3,
@@ -40,7 +41,7 @@ async def fire(canvas, start_row, start_column, obstacles, obstacles_in_last_col
                 return None
 
 
-async def fly_garbage(canvas, column, garbage_frame, obstacle, obstacles, obstacles_in_last_collisions, speed=0.5):
+async def fly_garbage(canvas, column, garbage_frame, obstacles_in_last_collisions, obstacles, speed=0.5):
     """Animate garbage, flying from top to bottom. Сolumn position will stay same, as specified on start."""
     rows_number, columns_number = canvas.getmaxyx()
 
@@ -48,6 +49,10 @@ async def fly_garbage(canvas, column, garbage_frame, obstacle, obstacles, obstac
     column = min(column, columns_number - 1)
 
     row = 0
+
+    frame_row, frame_column = get_frame_size(garbage_frame)
+    obstacle = Obstacle(0, column, frame_row, frame_column)
+    obstacles.append(obstacle)
 
     try:
         while row < rows_number:
